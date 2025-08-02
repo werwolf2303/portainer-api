@@ -1,5 +1,7 @@
 package eu.icole.portainer;
 
+import com.google.gson.Gson;
+import eu.icole.portainer.dtos.EndpointsGetPayload;
 import eu.icole.portainer.exceptions.PortainerException;
 import okhttp3.OkHttpClient;
 
@@ -52,6 +54,6 @@ public class Test {
 
         connection.connect();
 
-        System.out.println(connection.getAuthorization().authenticateViaOAuth("20674526521"));
+        System.out.println(connection.getEndpoints().getEndpoints(new EndpointsGetPayload.Builder().build()).get(0).getContainerEngine());
     }
 }

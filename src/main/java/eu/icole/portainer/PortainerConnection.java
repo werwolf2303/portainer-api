@@ -2,22 +2,28 @@ package eu.icole.portainer;
 
 import com.google.gson.Gson;
 import eu.icole.portainer.dtos.AuthenticatePayload;
+import eu.icole.portainer.dtos.EndpointsGetPayload;
 import eu.icole.portainer.dtos.OAuthPayload;
 import eu.icole.portainer.endpoints.auth.AuthEndpoint;
 import eu.icole.portainer.endpoints.Endpoint;
 import eu.icole.portainer.endpoints.auth.LogoutEndpoint;
 import eu.icole.portainer.endpoints.auth.OAuthEndpoint;
+import eu.icole.portainer.endpoints.endpoints.EndpointsGetEndpoint;
 import eu.icole.portainer.exceptions.PortainerException;
 import eu.icole.portainer.dtos.AuthenticateResponse;
 import okhttp3.OkHttpClient;
 import okhttp3.Request;
 import okhttp3.RequestBody;
 import okhttp3.Response;
+import org.jetbrains.annotations.Nullable;
 
 import java.io.IOException;
 import java.net.MalformedURLException;
 import java.net.URL;
+import java.util.Arrays;
+import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 
 @SuppressWarnings("unchecked")
 public class PortainerConnection {
@@ -57,18 +63,51 @@ public class PortainerConnection {
     public class Authorization {
         public AuthenticateResponse authenticate(String username, String password) throws IOException, PortainerException {
             AuthEndpoint endpoint = new AuthEndpoint();
-            return executeRequest(endpoint, endpoint.body(new AuthenticatePayload(username, password), gson));
+            return executeRequest(endpoint, endpoint.body(new AuthenticatePayload(username, password), gson), null);
         }
 
         // FIXME: https://github.com/portainer/portainer/issues/12689
         public void logout() throws IOException, PortainerException {
-            executeRequest(new LogoutEndpoint(), null);
+            executeRequest(new LogoutEndpoint(), null, null);
             jwtToken = null;
         }
 
         public AuthenticateResponse authenticateViaOAuth(String code) throws PortainerException, IOException {
             OAuthEndpoint endpoint = new OAuthEndpoint();
-            return executeRequest(endpoint, endpoint.body(new OAuthPayload(code), gson));
+            return executeRequest(endpoint, endpoint.body(new OAuthPayload(code), gson), null);
+        }
+    }
+
+    public Endpoints getEndpoints() {
+        return new Endpoints();
+    }
+
+    public class Endpoints {
+        public List<eu.icole.portainer.dtos.Endpoint> getEndpoints(EndpointsGetPayload payload) throws PortainerException, IOException {
+            EndpointsGetEndpoint endpoint = new EndpointsGetEndpoint();
+            String url = Utils.formatUrl(
+                    endpoint.url(),
+                    payload.getStart(),
+                    payload.getLimit(),
+                    payload.getOrder(),
+                    payload.getSearch(),
+                    payload.getGroupIds().stream().map(String::valueOf).collect(Collectors.joining(",")),
+                    payload.getStatus().stream().map(String::valueOf).collect(Collectors.joining(",")),
+                    payload.getTypes().stream().map(String::valueOf).collect(Collectors.joining(",")),
+                    payload.getTagIds().stream().map(String::valueOf).collect(Collectors.joining(",")),
+                    payload.isTagsPartialMatch(),
+                    payload.getEndpointIds().stream().map(String::valueOf).collect(Collectors.joining(",")),
+                    payload.isProvisioned(),
+                    payload.getAgentVersions().stream().map(String::valueOf).collect(Collectors.joining(",")),
+                    payload.isEdgeAsync(),
+                    payload.isEdgeDeviceUntrusted(),
+                    payload.getEdgeCheckInPassedSeconds(),
+                    payload.isExcludeSnapshots(),
+                    payload.getName(),
+                    payload.getEdgeStackStatus()
+                    );
+
+            return executeRequest(endpoint, null, url);
         }
     }
 
@@ -79,7 +118,7 @@ public class PortainerConnection {
         this.jwtToken = authenticateResponse;
     }
 
-    private <ResponseType> ResponseType executeRequest(Endpoint<?, ?> endpoint, RequestBody requestBody, Object... urlData) throws IOException, PortainerException {
+    private <ResponseType> ResponseType executeRequest(Endpoint<?, ?> endpoint, RequestBody requestBody, String url) throws IOException, PortainerException {
         Request.Builder requestBuilder = new Request.Builder();
         Request request = null;
 
@@ -87,15 +126,14 @@ public class PortainerConnection {
             requestBuilder.addHeader(header.getKey(), header.getValue());
         }
 
-        String url = this.url + endpoint.url();
-
-        if (url.contains("%"))
-            url = String.format(url, urlData);
+        if (url == null) url = this.url + endpoint.url();
+        else url = this.url + url;
 
         if (endpoint.needsAuth()) {
             if (jwtToken == null && (user != null && !user.isEmpty()) && (password != null && !password.isEmpty()))
                 jwtToken = getAuthorization().authenticate(user, password);
-            else throw new PortainerException("No auth token provider available!");
+            else if (jwtToken == null)
+                throw new PortainerException("No auth token provider available!");
 
             if (token != null && !token.isEmpty())
                 requestBuilder.header("Authorization", "Bearer " + token);
@@ -128,7 +166,7 @@ public class PortainerConnection {
                 throw new PortainerException("Invalid or expired token");
             else {
                 jwtToken = getAuthorization().authenticate(user, password);
-                return executeRequest(endpoint, requestBody, urlData, jwtToken);
+                return executeRequest(endpoint, requestBody, url);
             }
         }
 
