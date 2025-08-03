@@ -13,7 +13,7 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 
-public class EndpointsGetEndpoint implements Endpoint<Object, List<eu.icole.portainer.dtos.Endpoint>> {
+public class EndpointsGetEndpoints implements Endpoint<Object, List<eu.icole.portainer.dtos.Endpoint>> {
     @Override
     public String url() {
         return "/endpoints?start=%d&limit=%d&order=%d&search=%s&groupIds=%s&status=%s&types=%s&tagIds=%s&tagsPartialMatch=%b&endpointIds=%s&provisioned=%b&agentVersions=%s&edgeAsync=%b&edgeDeviceUntrusted=%b&edgeCheckInPassedSeconds=%d&excludeSnapshots=%b&name=%s&edgeStackStatus=%s";

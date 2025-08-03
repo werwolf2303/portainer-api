@@ -1,9 +1,19 @@
 package eu.icole.portainer;
 
+import com.github.dockerjava.api.DockerClient;
+import com.github.dockerjava.core.DefaultDockerClientConfig;
+import com.github.dockerjava.core.DockerClientConfig;
+import com.github.dockerjava.core.DockerClientImpl;
+import com.github.dockerjava.transport.DockerHttpClient;
 import com.google.gson.Gson;
+import eu.icole.portainer.dockerjava.PortainerDockerHttpClient;
 import eu.icole.portainer.dtos.EndpointsGetPayload;
 import eu.icole.portainer.exceptions.PortainerException;
 import okhttp3.OkHttpClient;
+import okhttp3.Request;
+import okhttp3.Response;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import javax.net.ssl.SSLContext;
 import javax.net.ssl.SSLSocketFactory;
@@ -17,8 +27,11 @@ import java.security.KeyManagementException;
 import java.security.NoSuchAlgorithmException;
 import java.security.SecureRandom;
 import java.security.cert.X509Certificate;
+import java.time.Duration;
 
 public class Test {
+    private static final Logger log = LoggerFactory.getLogger(Test.class);
+
     public static void main(String[] args) throws PortainerException, IOException, NoSuchAlgorithmException, KeyManagementException {
         TrustManager[] trustAllCerts = new TrustManager[]{
                 new X509TrustManager() {
@@ -54,6 +67,6 @@ public class Test {
 
         connection.connect();
 
-        System.out.println(connection.getEndpoints().getEndpoints(new EndpointsGetPayload.Builder().build()).get(0).getContainerEngine());
+        System.out.println(connection.getDocker(3).listContainersCmd().exec().get(0).getCommand());
     }
 }

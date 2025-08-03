@@ -1,6 +1,12 @@
 package eu.icole.portainer;
 
+import com.github.dockerjava.api.DockerClient;
+import com.github.dockerjava.core.DefaultDockerClientConfig;
+import com.github.dockerjava.core.DockerClientConfig;
+import com.github.dockerjava.core.DockerClientConfigDelegate;
+import com.github.dockerjava.core.DockerClientImpl;
 import com.google.gson.Gson;
+import eu.icole.portainer.dockerjava.PortainerDockerHttpClient;
 import eu.icole.portainer.dtos.AuthenticatePayload;
 import eu.icole.portainer.dtos.EndpointsGetPayload;
 import eu.icole.portainer.dtos.OAuthPayload;
@@ -8,19 +14,17 @@ import eu.icole.portainer.endpoints.auth.AuthEndpoint;
 import eu.icole.portainer.endpoints.Endpoint;
 import eu.icole.portainer.endpoints.auth.LogoutEndpoint;
 import eu.icole.portainer.endpoints.auth.OAuthEndpoint;
-import eu.icole.portainer.endpoints.endpoints.EndpointsGetEndpoint;
+import eu.icole.portainer.endpoints.endpoints.EndpointsGetEndpoints;
 import eu.icole.portainer.exceptions.PortainerException;
 import eu.icole.portainer.dtos.AuthenticateResponse;
 import okhttp3.OkHttpClient;
 import okhttp3.Request;
 import okhttp3.RequestBody;
 import okhttp3.Response;
-import org.jetbrains.annotations.Nullable;
 
 import java.io.IOException;
 import java.net.MalformedURLException;
 import java.net.URL;
-import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
@@ -37,13 +41,17 @@ public class PortainerConnection {
     private final OkHttpClient client;
 
     private AuthenticateResponse jwtToken;
+    private DockerClient dockerClient;
+    private DockerClientConfig dockerClientConfig;
 
-    private PortainerConnection(OkHttpClient client, String url, String token, String user, String password) {
+    private PortainerConnection(OkHttpClient client, String url, String token, String user, String password, DockerClient dockerClient, DockerClientConfig dockerClientConfig) {
         this.url = url + "/api";
         this.user = user;
         this.password = password;
         this.token = token;
         this.client = client;
+        this.dockerClient = dockerClient;
+        this.dockerClientConfig = dockerClientConfig;
 
         this.gson = new Gson();
     }
@@ -52,12 +60,27 @@ public class PortainerConnection {
         jwtToken = getAuthorization().authenticate(user, password);
     }
 
+    public OkHttpClient getClient() {
+        return client;
+    }
+
     public String getJwt() {
         return jwtToken.getJwt();
     }
 
+    public String getUrl() {
+        return url;
+    }
+
     public Authorization getAuthorization() {
         return new Authorization();
+    }
+
+    public DockerClient getDocker(int endpointId) {
+        if (dockerClient != null) return dockerClient;
+        DockerClientConfig clientConfig = dockerClientConfig != null ? dockerClientConfig
+                : new DefaultDockerClientConfig.Builder().build();
+        return DockerClientImpl.getInstance(clientConfig, new PortainerDockerHttpClient(endpointId, this));
     }
 
     public class Authorization {
@@ -76,6 +99,13 @@ public class PortainerConnection {
             OAuthEndpoint endpoint = new OAuthEndpoint();
             return executeRequest(endpoint, endpoint.body(new OAuthPayload(code), gson), null);
         }
+
+        public void requestNewJwtToken() throws IOException, PortainerException {
+            if (jwtToken == null && (user != null && !user.isEmpty()) && (password != null && !password.isEmpty()))
+                jwtToken = getAuthorization().authenticate(user, password);
+            else if (jwtToken == null)
+                throw new PortainerException("No auth token provider available!");
+        }
     }
 
     public Endpoints getEndpoints() {
@@ -84,7 +114,7 @@ public class PortainerConnection {
 
     public class Endpoints {
         public List<eu.icole.portainer.dtos.Endpoint> getEndpoints(EndpointsGetPayload payload) throws PortainerException, IOException {
-            EndpointsGetEndpoint endpoint = new EndpointsGetEndpoint();
+            EndpointsGetEndpoints endpoint = new EndpointsGetEndpoints();
             String url = Utils.formatUrl(
                     endpoint.url(),
                     payload.getStart(),
@@ -182,6 +212,8 @@ public class PortainerConnection {
         private boolean useSsl = false;
         private boolean useUsernamePassword;
         private OkHttpClient client;
+        private DockerClient dockerClient;
+        private DockerClientConfig dockerClientConfig;
 
         public Builder setToken(String token) {
             useUsernamePassword = false;
@@ -229,6 +261,16 @@ public class PortainerConnection {
             return this;
         }
 
+        public Builder setDockerClient(DockerClient dockerClient) {
+            this.dockerClient = dockerClient;
+            return this;
+        }
+
+        public Builder setDockerClientConfig(DockerClientConfig dockerClientConfig) {
+            this.dockerClientConfig = dockerClientConfig;
+            return this;
+        }
+
         public PortainerConnection build() {
             if (useUsernamePassword && (user == null || user.isEmpty()) || (password == null || password.isEmpty()))
                 throw new IllegalArgumentException("You must specify both user and password");
@@ -242,7 +284,7 @@ public class PortainerConnection {
             url.append(':');
             url.append(port);
 
-            return new PortainerConnection(client == null ? new OkHttpClient() : client, url.toString(), token, user, password);
+            return new PortainerConnection(client == null ? new OkHttpClient() : client, url.toString(), token, user, password, dockerClient, dockerClientConfig);
         }
     }
 }
