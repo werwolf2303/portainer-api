@@ -4,8 +4,11 @@ import com.github.dockerjava.api.DockerClient;
 import com.github.dockerjava.api.model.Container;
 import com.github.dockerjava.api.model.Statistics;
 import com.github.dockerjava.core.InvocationBuilder;
+import eu.icole.portainer.dtos.EndpointsPostPayload;
 import eu.icole.portainer.exceptions.PortainerException;
+import okhttp3.MultipartBody;
 import okhttp3.OkHttpClient;
+import okio.Buffer;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -19,11 +22,13 @@ import java.security.KeyManagementException;
 import java.security.NoSuchAlgorithmException;
 import java.security.SecureRandom;
 import java.security.cert.X509Certificate;
+import java.util.ArrayList;
+import java.util.List;
 
 public class Test {
     private static final Logger log = LoggerFactory.getLogger(Test.class);
 
-    public static void main(String[] args) throws PortainerException, IOException, NoSuchAlgorithmException, KeyManagementException {
+    public static void main(String[] args) throws PortainerException, IOException, NoSuchAlgorithmException, KeyManagementException, NoSuchFieldException, IllegalAccessException {
         TrustManager[] trustAllCerts = new TrustManager[]{
                 new X509TrustManager() {
                     @Override
@@ -69,6 +74,5 @@ public class Test {
                 }
             });
         }
-
     }
 }

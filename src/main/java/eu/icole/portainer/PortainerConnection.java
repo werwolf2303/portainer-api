@@ -56,6 +56,7 @@ public class PortainerConnection {
     }
 
     public void connect() throws PortainerException, IOException {
+        if (token != null) return;
         jwtToken = getAuthorization().authenticate(user, password);
     }
 
@@ -161,11 +162,11 @@ public class PortainerConnection {
         if (endpoint.needsAuth()) {
             if (jwtToken == null && (user != null && !user.isEmpty()) && (password != null && !password.isEmpty()))
                 jwtToken = getAuthorization().authenticate(user, password);
-            else if (jwtToken == null)
+            else if (jwtToken == null && token == null)
                 throw new PortainerException("No auth token provider available!");
 
             if (token != null && !token.isEmpty())
-                requestBuilder.header("Authorization", "Bearer " + token);
+                requestBuilder.header("X-API-KEY", token);
             else requestBuilder.header("Authorization", "Bearer " + jwtToken.getJwt());
         }
 
