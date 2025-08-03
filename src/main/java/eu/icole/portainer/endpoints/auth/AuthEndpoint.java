@@ -1,12 +1,12 @@
 package eu.icole.portainer.endpoints.auth;
 
 import com.google.gson.Gson;
-import eu.icole.portainer.dtos.AuthenticatePayload;
+import eu.icole.portainer.dtos.auth.AuthenticatePayload;
+import eu.icole.portainer.dtos.auth.AuthenticateResponse;
 import eu.icole.portainer.endpoints.Endpoint;
 import eu.icole.portainer.endpoints.RequestTypes;
 import eu.icole.portainer.exceptions.InvalidCredentialsException;
 import eu.icole.portainer.exceptions.PortainerException;
-import eu.icole.portainer.dtos.AuthenticateResponse;
 import okhttp3.*;
 
 import java.io.IOException;
@@ -22,7 +22,7 @@ public class AuthEndpoint implements Endpoint<AuthenticatePayload, AuthenticateR
 
     @Override
     public RequestBody body(AuthenticatePayload data, Gson gson) {
-        return RequestBody.create(data.toString(gson), MediaType.parse("application/json"));
+        return RequestBody.create(gson.toJson(data), MediaType.parse("application/json"));
     }
 
     @Override

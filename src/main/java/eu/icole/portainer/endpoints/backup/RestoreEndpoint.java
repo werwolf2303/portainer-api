@@ -2,7 +2,7 @@ package eu.icole.portainer.endpoints.backup;
 
 import com.google.gson.Gson;
 import com.google.gson.JsonObject;
-import eu.icole.portainer.dtos.RestorePayload;
+import eu.icole.portainer.olddtos.RestorePayload;
 import eu.icole.portainer.endpoints.Endpoint;
 import eu.icole.portainer.endpoints.RequestTypes;
 import eu.icole.portainer.exceptions.PortainerException;

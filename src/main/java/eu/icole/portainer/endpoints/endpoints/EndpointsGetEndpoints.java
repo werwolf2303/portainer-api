@@ -13,14 +13,14 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 
-public class EndpointsGetEndpoints implements Endpoint<Object, List<eu.icole.portainer.dtos.Endpoint>> {
+public class EndpointsGetEndpoints implements Endpoint<Object, List<eu.icole.portainer.olddtos.Endpoint>> {
     @Override
     public String url() {
         return "/endpoints?start=%d&limit=%d&order=%d&search=%s&groupIds=%s&status=%s&types=%s&tagIds=%s&tagsPartialMatch=%b&endpointIds=%s&provisioned=%b&agentVersions=%s&edgeAsync=%b&edgeDeviceUntrusted=%b&edgeCheckInPassedSeconds=%d&excludeSnapshots=%b&name=%s&edgeStackStatus=%s";
     }
 
     @Override
-    public List<eu.icole.portainer.dtos.Endpoint> result(Gson gson, Response response) throws IOException, PortainerException {
+    public List<eu.icole.portainer.olddtos.Endpoint> result(Gson gson, Response response) throws IOException, PortainerException {
         switch (response.code()) {
             case 200:
                 break;
@@ -30,7 +30,8 @@ public class EndpointsGetEndpoints implements Endpoint<Object, List<eu.icole.por
                 throw new PortainerException("Unexpected response code! " + response.code() + " : " + response.body().string());
         }
 
-        return gson.fromJson(response.body().string(), new TypeToken<List<eu.icole.portainer.dtos.Endpoint>>(){}.getType());
+        return gson.fromJson(response.body().string(), new TypeToken<List<eu.icole.portainer.olddtos.Endpoint>>() {
+        }.getType());
     }
 
     @Override

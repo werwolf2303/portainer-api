@@ -1,33 +1,24 @@
 package eu.icole.portainer;
 
 import com.github.dockerjava.api.DockerClient;
-import com.github.dockerjava.core.DefaultDockerClientConfig;
-import com.github.dockerjava.core.DockerClientConfig;
-import com.github.dockerjava.core.DockerClientImpl;
-import com.github.dockerjava.transport.DockerHttpClient;
-import com.google.gson.Gson;
-import eu.icole.portainer.dockerjava.PortainerDockerHttpClient;
-import eu.icole.portainer.dtos.EndpointsGetPayload;
+import com.github.dockerjava.api.model.Container;
+import com.github.dockerjava.api.model.Statistics;
+import com.github.dockerjava.core.InvocationBuilder;
 import eu.icole.portainer.exceptions.PortainerException;
 import okhttp3.OkHttpClient;
-import okhttp3.Request;
-import okhttp3.Response;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import javax.net.ssl.SSLContext;
-import javax.net.ssl.SSLSocketFactory;
 import javax.net.ssl.TrustManager;
 import javax.net.ssl.X509TrustManager;
 import java.io.IOException;
-import java.net.InetAddress;
-import java.net.Socket;
-import java.net.UnknownHostException;
+import java.net.InetSocketAddress;
+import java.net.Proxy;
 import java.security.KeyManagementException;
 import java.security.NoSuchAlgorithmException;
 import java.security.SecureRandom;
 import java.security.cert.X509Certificate;
-import java.time.Duration;
 
 public class Test {
     private static final Logger log = LoggerFactory.getLogger(Test.class);
@@ -55,6 +46,7 @@ public class Test {
         OkHttpClient client = new OkHttpClient.Builder()
                 .sslSocketFactory(sslContext.getSocketFactory(), (X509TrustManager) trustAllCerts[0])
                 .hostnameVerifier((hostname, session) -> true)
+                .proxy(new Proxy(Proxy.Type.HTTP, new InetSocketAddress("127.0.0.1", 8080)))
                 .build();
 
         PortainerConnection connection = new PortainerConnection.Builder()
@@ -67,6 +59,16 @@ public class Test {
 
         connection.connect();
 
-        System.out.println(connection.getDocker(3).listContainersCmd().exec().get(0).getCommand());
+        DockerClient dockerClient = connection.getDocker(3);
+
+        for (Container container : dockerClient.listContainersCmd().exec()) {
+            dockerClient.statsCmd(container.getId()).exec(new InvocationBuilder.AsyncResultCallback<Statistics>() {
+                @Override
+                public void onNext(Statistics object) {
+                    System.out.println(object.toString());
+                }
+            });
+        }
+
     }
 }

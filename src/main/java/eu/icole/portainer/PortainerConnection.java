@@ -3,20 +3,19 @@ package eu.icole.portainer;
 import com.github.dockerjava.api.DockerClient;
 import com.github.dockerjava.core.DefaultDockerClientConfig;
 import com.github.dockerjava.core.DockerClientConfig;
-import com.github.dockerjava.core.DockerClientConfigDelegate;
 import com.github.dockerjava.core.DockerClientImpl;
 import com.google.gson.Gson;
 import eu.icole.portainer.dockerjava.PortainerDockerHttpClient;
-import eu.icole.portainer.dtos.AuthenticatePayload;
-import eu.icole.portainer.dtos.EndpointsGetPayload;
-import eu.icole.portainer.dtos.OAuthPayload;
+import eu.icole.portainer.dtos.auth.AuthenticatePayload;
+import eu.icole.portainer.dtos.auth.AuthenticateResponse;
+import eu.icole.portainer.olddtos.EndpointsGetPayload;
+import eu.icole.portainer.olddtos.OAuthPayload;
 import eu.icole.portainer.endpoints.auth.AuthEndpoint;
 import eu.icole.portainer.endpoints.Endpoint;
 import eu.icole.portainer.endpoints.auth.LogoutEndpoint;
 import eu.icole.portainer.endpoints.auth.OAuthEndpoint;
 import eu.icole.portainer.endpoints.endpoints.EndpointsGetEndpoints;
 import eu.icole.portainer.exceptions.PortainerException;
-import eu.icole.portainer.dtos.AuthenticateResponse;
 import okhttp3.OkHttpClient;
 import okhttp3.Request;
 import okhttp3.RequestBody;
@@ -86,7 +85,7 @@ public class PortainerConnection {
     public class Authorization {
         public AuthenticateResponse authenticate(String username, String password) throws IOException, PortainerException {
             AuthEndpoint endpoint = new AuthEndpoint();
-            return executeRequest(endpoint, endpoint.body(new AuthenticatePayload(username, password), gson), null);
+            return executeRequest(endpoint, endpoint.body(new AuthenticatePayload(password, username), gson), null);
         }
 
         // FIXME: https://github.com/portainer/portainer/issues/12689
@@ -113,7 +112,7 @@ public class PortainerConnection {
     }
 
     public class Endpoints {
-        public List<eu.icole.portainer.dtos.Endpoint> getEndpoints(EndpointsGetPayload payload) throws PortainerException, IOException {
+        public List<eu.icole.portainer.olddtos.Endpoint> getEndpoints(EndpointsGetPayload payload) throws PortainerException, IOException {
             EndpointsGetEndpoints endpoint = new EndpointsGetEndpoints();
             String url = Utils.formatUrl(
                     endpoint.url(),
@@ -135,7 +134,7 @@ public class PortainerConnection {
                     payload.isExcludeSnapshots(),
                     payload.getName(),
                     payload.getEdgeStackStatus()
-                    );
+            );
 
             return executeRequest(endpoint, null, url);
         }
@@ -171,7 +170,7 @@ public class PortainerConnection {
         }
 
         if (requestBody == null)
-            requestBody = RequestBody.create(new byte[] {});
+            requestBody = RequestBody.create(new byte[]{});
 
         switch (endpoint.type()) {
             case GET:

@@ -1,7 +1,7 @@
 package eu.icole.portainer.endpoints.backup;
 
 import com.google.gson.Gson;
-import eu.icole.portainer.dtos.BackupPayload;
+import eu.icole.portainer.olddtos.BackupPayload;
 import eu.icole.portainer.endpoints.Endpoint;
 import eu.icole.portainer.endpoints.RequestTypes;
 import eu.icole.portainer.exceptions.PortainerException;

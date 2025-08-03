@@ -1,8 +1,8 @@
 package eu.icole.portainer.endpoints.auth;
 
 import com.google.gson.Gson;
-import eu.icole.portainer.dtos.AuthenticateResponse;
-import eu.icole.portainer.dtos.OAuthPayload;
+import eu.icole.portainer.olddtos.AuthenticateResponse;
+import eu.icole.portainer.olddtos.OAuthPayload;
 import eu.icole.portainer.endpoints.Endpoint;
 import eu.icole.portainer.endpoints.RequestTypes;
 import eu.icole.portainer.exceptions.InvalidCredentialsException;
