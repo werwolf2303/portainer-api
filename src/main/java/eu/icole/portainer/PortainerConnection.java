@@ -6,15 +6,17 @@ import com.github.dockerjava.core.DockerClientConfig;
 import com.github.dockerjava.core.DockerClientImpl;
 import com.google.gson.Gson;
 import eu.icole.portainer.dockerjava.PortainerDockerHttpClient;
+import eu.icole.portainer.dtos.EndpointsPostPayload;
 import eu.icole.portainer.dtos.auth.AuthenticatePayload;
 import eu.icole.portainer.dtos.auth.AuthenticateResponse;
+import eu.icole.portainer.dtos.endpoints.EndpointUpdatePayload;
+import eu.icole.portainer.endpoints.endpoints.*;
 import eu.icole.portainer.olddtos.EndpointsGetPayload;
 import eu.icole.portainer.olddtos.OAuthPayload;
 import eu.icole.portainer.endpoints.auth.AuthEndpoint;
 import eu.icole.portainer.endpoints.Endpoint;
 import eu.icole.portainer.endpoints.auth.LogoutEndpoint;
 import eu.icole.portainer.endpoints.auth.OAuthEndpoint;
-import eu.icole.portainer.endpoints.endpoints.EndpointsGetEndpoints;
 import eu.icole.portainer.exceptions.PortainerException;
 import okhttp3.OkHttpClient;
 import okhttp3.Request;
@@ -139,6 +141,45 @@ public class PortainerConnection {
 
             return executeRequest(endpoint, null, url);
         }
+
+        public eu.icole.portainer.olddtos.Endpoint createEndpoint(EndpointsPostPayload payload) throws PortainerException, IOException {
+            EndpointsGetEndpoint endpoint = new EndpointsGetEndpoint();
+            return executeRequest(endpoint, endpoint.body(payload, gson), null);
+        }
+
+        public void deleteEndpoint(String id) throws PortainerException, IOException {
+            EndpointsDeleteEndpoint endpoint = new EndpointsDeleteEndpoint();
+            executeRequest(endpoint, null, String.format(
+                    endpoint.url(),
+                    id
+            ));
+        }
+
+        public eu.icole.portainer.dtos.portainer.Endpoint getEndpoint(String id) throws PortainerException, IOException {
+            EndpointsGetEndpoint endpoint = new EndpointsGetEndpoint();
+            return executeRequest(endpoint, null, String.format(
+                    endpoint.url(),
+                    id
+            ));
+        }
+
+        public eu.icole.portainer.dtos.portainer.Endpoint updateEndpoint(String id, EndpointUpdatePayload payload) throws PortainerException, IOException {
+            EndpointsPutEndpoint endpoint = new EndpointsPutEndpoint();
+            return executeRequest(endpoint, endpoint.body(payload, gson), String.format(
+                    endpoint.url(),
+                    id
+            ));
+        }
+
+        public void endpointDeAssociation(String id) throws PortainerException, IOException {
+            EndpointsPutAssociation endpoint = new EndpointsPutAssociation();
+            executeRequest(endpoint, null, String.format(
+                    endpoint.url(),
+                    id
+            ));
+        }
+
+
     }
 
     /**
@@ -171,7 +212,11 @@ public class PortainerConnection {
         }
 
         if (requestBody == null)
-            requestBody = RequestBody.create(new byte[]{});
+            try {
+                requestBody = RequestBody.create(new byte[]{});
+            }catch (Exception e) {
+                throw new PortainerException("Failed to create request body!", e);
+            }
 
         switch (endpoint.type()) {
             case GET:

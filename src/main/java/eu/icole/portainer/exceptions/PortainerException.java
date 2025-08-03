@@ -7,4 +7,8 @@ public class PortainerException extends Exception {
     public PortainerException(String message) {
         super(message);
     }
+
+    public PortainerException(String message, Exception exception) {
+        super(message, exception);
+    }
 }

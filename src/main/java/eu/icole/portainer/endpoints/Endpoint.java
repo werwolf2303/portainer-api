@@ -11,7 +11,7 @@ import java.util.Map;
 public interface Endpoint<RequestType, ResponseType> {
     String url();
 
-    RequestBody body(RequestType data, Gson gson);
+    RequestBody body(RequestType data, Gson gson) throws Exception;
 
     ResponseType result(Gson gson, Response response) throws IOException, PortainerException;
 
